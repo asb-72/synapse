@@ -30,6 +30,7 @@ error_chain! {
 
 const INIT_MAX_QUEUE: u16 = 5;
 const MAX_QUEUE_CAP: u16 = 600;
+const IP_FILTER_BLOCK: u8 = 0;
 
 pub mod message {
     use crate::buffers;
@@ -123,8 +124,8 @@ impl PeerConn {
     /// Creates a new "outgoing" peer, which acts as a client.
     /// Once created, set_torrent should be called.
     pub fn new_outgoing(ip: &SocketAddr) -> io::Result<PeerConn> {
-        if let Some((_, 1)) = IP_FILTER.longest_match(ip.ip()) {
-            debug!(
+        if let Some((_, &IP_FILTER_BLOCK)) = IP_FILTER.longest_match(ip.ip()) {
+            let msg = format!(
                 "Outgoing connection to peer {} blocked by ip_filter",
                 ip.ip()
             );
@@ -137,8 +138,8 @@ impl PeerConn {
     /// Once the handshake is received, set_torrent should be called.
     pub fn new_incoming(sock: TcpStream) -> io::Result<PeerConn> {
         let peer_ip = sock.peer_addr()?.ip();
-        if let Some((_, 1)) = IP_FILTER.longest_match(peer_ip) {
-            debug!(
+        if let Some((_, &IP_FILTER_BLOCK)) = IP_FILTER.longest_match(peer_ip) {
+            let msg = format!(
                 "Incoming connection from peer {} blocked by ip_filter",
                 peer_ip
             );
