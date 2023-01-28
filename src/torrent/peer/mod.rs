@@ -129,7 +129,8 @@ impl PeerConn {
                 "Outgoing connection to peer {} blocked by ip_filter",
                 ip.ip()
             );
-            return Err(io::Error::from_raw_os_error(13));
+            debug!("{msg}");
+            return Err(io::Error::new(io::ErrorKind::PermissionDenied, msg));
         }
         Ok(PeerConn::new(Socket::new(ip)?))
     }
@@ -143,7 +144,8 @@ impl PeerConn {
                 "Incoming connection from peer {} blocked by ip_filter",
                 peer_ip
             );
-            return Err(io::Error::from_raw_os_error(13));
+            debug!("{msg}");
+            return Err(io::Error::new(io::ErrorKind::PermissionDenied, msg));
         }
         Ok(PeerConn::new(Socket::from_stream(sock)?))
     }
