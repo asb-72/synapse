@@ -306,6 +306,15 @@ impl<T: cio::CIO> Control<T> {
             tracker::Response::DHT { tid, peers } | tracker::Response::PEX { tid, peers } => {
                 (tid, peers)
             }
+            tracker::Response::RETRACKER { hash, peers } => {
+                let tid = if let Some(tid) = self.hash_idx.get(&hash).cloned() {
+                    trace!("Found torrent for tid {} {}", hash_to_id(&hash), &tid);
+                    tid
+                } else {
+                    usize::MAX
+                };
+                (tid, peers)
+            }
         };
         for ip in &peers {
             trace!("Adding peer({:?})!", ip);

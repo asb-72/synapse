@@ -2,6 +2,7 @@ mod dht;
 mod dns;
 mod errors;
 mod http;
+mod retracker;
 mod udp;
 
 use std::collections::VecDeque;
@@ -28,6 +29,7 @@ pub struct Tracker {
     udp: udp::Handler,
     dht: dht::Manager,
     dns: dns::Resolver,
+    retracker: retracker::Handler,
     timer: usize,
     shutting_down: bool,
 }
@@ -84,6 +86,10 @@ pub enum Response {
         tid: usize,
         peers: Vec<SocketAddr>,
     },
+    RETRACKER {
+        hash: [u8; 20],
+        peers: Vec<SocketAddr>,
+    },
 }
 
 #[derive(Debug)]
@@ -109,6 +115,7 @@ impl Tracker {
         let dht = dht::Manager::new(&reg, db)?;
         let http = http::Handler::new(&reg)?;
         let dns = dns::Resolver::new(&reg)?;
+        let retracker = retracker::Handler::new(&reg)?;
         let th = dh.run("trk", move |h| {
             Tracker {
                 poll,
@@ -117,6 +124,7 @@ impl Tracker {
                 dht,
                 http,
                 dns,
+                retracker,
                 timer,
                 queue: VecDeque::new(),
                 shutting_down: false,
@@ -296,6 +304,10 @@ impl Tracker {
             }
         } else if self.dht.id() == event.id {
             for resp in self.dht.readable() {
+                self.send_response(resp);
+            }
+        } else if self.retracker.id() == event.id {
+            for resp in self.retracker.readable() {
                 self.send_response(resp);
             }
         } else {
